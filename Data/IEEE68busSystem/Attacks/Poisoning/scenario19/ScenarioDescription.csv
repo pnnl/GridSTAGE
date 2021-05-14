@@ -1,0 +1,2 @@
+Fault,Attack,Load Changes,AGC,PSS,Fault location,Fault type,Attack location,Attack type,Attack start time (sec),Attack end time (sec),Attack duration (sec),Attack amplitude (%),,,,Location(s) of load changes,Magnitude(s) of load changes,,Start time(s) for load changes,End time(s) for load changes
+0,1,1,1,0,None,None,4  38  47  57,Poisoning,20,45,25,0.0299999999999967,0.0299999999999967,0.0299999999999967,0.0299999999999967,45   3  28, 0.38221    -0.21279    0.055351,-0.23856     0.28478    -0.44665,15  35,

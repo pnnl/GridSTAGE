@@ -1,0 +1,58 @@
+,Case,Standard Deviation of Load Perturbation,# Samples,Observations,Scenario Range,Unstable scenario
+1,Loads 1-hop away from generator buses,0.2,15,1 scenario unstable,1-15,2
+,,0.4,15,1 scenario unstable,16-30,17
+,,0.6,15,1 scenario unstable,31-45,32
+2,Loads 2-hops away from generator buses,0.2,15,All stable,46-60,--
+,,0.4,15,2 scenarios unstable,61-75,"64, 67"
+,,0.6,15,2 scenarios unstable,76-90,"79, 82"
+3,Loads 3-hops away from generator buses,0.2,15,All stable,91-105,--
+,,0.4,15,All stable,106-120,--
+,,0.6,15,All stable,121-135,--
+4,Loads 4-hops away from generator buses,0.2,15,All stable,136-150,--
+,,0.4,15,1 unstable scenario,151-165,161
+,,0.6,15,2 unstable scenarios,166-180,"175, 176"
+5,Loads near largest MW generator bus,0.2,15,1 unstable scenario,181-195,182
+,,0.4,15,1 unstable scenario,196-210,197
+,,0.6,15,"1 unstable scenario, however some 
+voltage angles are varying a lot",211-225,212
+6,Loads near smallest MW generator bus,0.2,15,"Frequencies remain stable, however 
+voltage angles vary a lot
+226, 227, 228, 229, 231",226-240,
+,,0.4,15,"Frequencies remain stable, however 
+voltage angles vary a lot
+241:247, 248",241-255,
+,,0.6,15,1 unstable scenario,286-300,286
+7,Loads near high inertia generator bus,0.2,15,"Most of the scenarios show higher 
+Voltage angle variations.
+Note, the frequencies are stable
+256-264, 266, 267, 269, 270",256-270,
+,,0.4,15,1 unstable scenario,301-315,314
+,,0.6,15,2 unstable scenarios,316-330,"317, 329"
+8,Loads near low inertia generator bus,0.2,15,1 scenario unstable,271-285,272
+,,0.4,15,1 scenario unstable,331-345,332
+,,0.6,15,2 unstable scenarios,346-360,"347, 354"
+9,Loads with highest degree,0.6,15,All stable,361-375,--
+,,0.4,15,All stable,376-390,--
+,,0.2,15,All stable,391-405,--
+10,Loads with lowest degree,0.2,15,All stable,406-420,--
+,,0.4,15,1 unstable scenario,421-435,434
+,,0.6,15,1 unstable scenario,436-450,449
+11,Increase loads in area-1 only,0.2,15,Many unstable scenarios,451-465,"451, 452, 454,
+455, 456, 462, 464"
+12,Decrease loads in area-1 only,0.2,15,3 unstable scenarios,466-480,"467, 474, 479"
+,,0.4,15,Many unstable scenarios,481-495,"482, 484, 485, 486, 487, 
+489, 491, 492, 494, 495"
+13,Increase loads in area-2 only,0.1,15,"Frequency changes in a 
+synchronized way (is not intuitive)
+Voltages keep going down and 
+voltage angles seem out of control",496-510,
+,,0.2,--,Power flow infeasibility,--,--
+14,Decrease loads in area-2 only,0.2,15,"Frequency changes in a 
+synchronized way (is not intuitive)
+Voltages keep going down and 
+voltage angles seem out of control",511-525,
+15,Increase in area-1 and decrease in area-2,0.2,15,Few unstable scenarios,526-540,"527, 531, 539"
+,,0.4,15,"Encountered unstable and then 
+infeasibility",--,
+16,Decrease in area-1 and increase in area-2,0.2,15,2 Unstable scenarios,541-555,"544, 554"
+,,,,Convergence issues,556-570,557
