@@ -1,0 +1,37 @@
+IEEE 68 bus system
+Fault type: no fault 
+Load changes: NO 
+Power system stabilizer (PSS): NO 
+Automatic generation control (AGC): YES 
+PMU attack: YES
+Type of attack: Poisoning 
+Attack Location: Buses 66, 1 
+Attack Location: Buses 52, 9 
+Start and end time of attack: 39.00 -- 64.00 seconds
+
+ 
+ 
+Generator Type (at all generators): Subtransient round rotor 
+ 
+Reproducing the sw_con variable information to understand the step time(s), simulation time(s), and event description. 
+
+sw_con = 
+0.00 0 0 0 0 0 0.010 
+0.05 1 2 0 0 6 0.010 
+0.10 0 0 0 0 0 0.010 
+0.20 0 0 0 0 0 0.010 
+0.50 0 0 0 0 0 0.010 
+30.00 0 0 0 0 0 0.010 
+
+ 
+PMU locations = 
+1 	2 	3 	4 	5 	6 	7 	8 	9 	10 	11 	12 	13 	14 	15 	16 	17 	18 	19 	20 	21 	22 	23 	24 	25 	26 	27 	28 	29 	30 	31 	32 	33 	34 	35 	36 	37 	38 	39 	40 	41 	42 	43 	44 	45 	46 	47 	48 	49 	50 	51 	52 	53 	54 	55 	56 	57 	58 	59 	60 	61 	62 	63 	64 	65 	66 	67 	68 	
+ 
+SCADA locations = 
+1 	2 	3 	4 	5 	6 	7 	8 	9 	10 	11 	12 	13 	14 	15 	16 	17 	18 	19 	20 	21 	22 	23 	24 	25 	26 	27 	28 	29 	30 	31 	32 	33 	34 	35 	36 	37 	38 	39 	40 	41 	42 	43 	44 	45 	46 	47 	48 	49 	50 	51 	52 	53 	54 	55 	56 	57 	58 	59 	60 	61 	62 	63 	64 	65 	66 	67 	68 	
+ 
+Number of PMU measurements per second) = 
+50 	
+ 
+Number of SCADA measurements every 2 seconds) = 
+1 	

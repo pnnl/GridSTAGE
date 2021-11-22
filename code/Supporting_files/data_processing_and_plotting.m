@@ -219,7 +219,7 @@ title('Difference between PMU and SCADA measurements')
 %}
 %------------------------------------------------------------------------
 %% PMU Frequency plots 
-frequency_plot = figure('Position',[-1680 528 560 420]);
+frequency_plot = figure; % ('Position',[-1680 528 560 420]);
 freqs = PMU.f(:, PMU_locations);
 mean_freq = mean(freqs,2);
 plot(t(PMU_samples(1:end)), PMU.f(:, PMU_locations),'LineWidth',1.5); hold on
@@ -231,7 +231,7 @@ title(sprintf('Scenario: %d', scenIdx));
 % ylim([59, 61]);
 %------------------------------------------------------------------------
 %% PMU Voltage Magnitude and Angle plots
-voltage_plot = figure('Position',[-1120 528 560 420]);
+voltage_plot = figure; %('Position',[-1120 528 560 420]);
 subplot(2,1,1)
 plot(t(PMU_samples),PMU.Vm(:, PMU_locations), 'LineWidth',2)
 title(sprintf('Scenario: %d', scenIdx));
@@ -322,7 +322,7 @@ if agc_control
         stairs(t(ACE_data.k),ACE_data.myACE2, 'r','linewidth',3,'displayname','ACE-2')
         xlabel('time [s]')
         title('Area Control Error')
-        legend location best
+        legend('location', 'best')
         legend box off
         
         subplot(3,1,2)

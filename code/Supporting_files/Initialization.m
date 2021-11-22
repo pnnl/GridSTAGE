@@ -19,8 +19,10 @@ switch Network
 %         dfile = 'd9bus.m';
     case '39'
         dfile = 'datane.m';
+        generator_locations = 30:39; 
     case '68'
         dfile = 'data16m_pd.m';
+        generator_locations = 53:68; 
         % dfile = 'data16m_original.m';
     case '145'
         dfile = 'data50m.m';

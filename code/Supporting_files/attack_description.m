@@ -3,7 +3,7 @@
 % random poisoning
 
 % Determining simulation steps when attack starts or ends
-if strcmp(AT, 'Ramp') || strcmp(AT, 'Step') || strcmp(AT, 'Posioning') || strcmp(AT, 'Freezing')
+if strcmp(AT, 'Ramp') || strcmp(AT, 'Step') || strcmp(AT, 'Poisoning') || strcmp(AT, 'Freezing')
     AttackVector.attack_start_step  = attack.start_time_in_sec/TimeStep_of_simulation;
     AttackVector.attack_end_step    = attack.end_time_in_sec/TimeStep_of_simulation;
 elseif strcmp(AT,'Trapezoid')

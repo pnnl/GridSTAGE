@@ -1,9 +1,42 @@
-% Author: Sai Pushpak Nandanoori (uses PST)
-% Date created: October 22, 2019
-% Updated: April 8, 2020 by Seemita Pal
-% updated: April 27, 2020 by Sai Pushpak
-% updated: May 12, 2020 by Sai Pushpak (added trapezoidal attacks 
-% and freezing attacks)
+%{
+Author: Sai Pushpak Nandanoori (uses PST)
+Date created: October 22, 2019
+Updated: April 8, 2020 by Seemita Pal
+updated: April 27, 2020 by Sai Pushpak
+updated: May 12, 2020 by Sai Pushpak (added trapezoidal attacks
+and freezing attacks)
+updated: Nov 22, 2021 by Sai Pushpak (fixed the run errors (load_locations))
+%}
+%--------------------------------------------------------------------------
+%{
+Caveats:
+- This code has been hard coded at a few places for IEEE 68 bus system
+- TopologyData and Tie line power has been saved for IEEE 68 bus system
+- AGC controls are tuned for IEEE 68 bus system
+%}
+%--------------------------------------------------------------------------
+%{
+References:
+- For GridSTAGE: 
+Sai Pushpak Nandanoori, Soumya Kundu, Seemita Pal, Khushbu Agarwal, and 
+Sutanay Choudhury. "Model-agnostic algorithm for real-time attack 
+identification in power grid using koopman modes." In 2020 IEEE 
+International Conference on Communications, Control, and Computing 
+Technologies for Smart Grids (SmartGridComm), pp. 1-6. IEEE, 2020.
+
+
+- For AGC related questions: please refer to the work:
+ Jiangmeng Zhang, and Alejandro D. Domínguez-García. 
+"Augmenting the power system toolbox: Enabling automatic generation control 
+and providing a platform for cyber security analysis." In 2016 North 
+American Power Symposium (NAPS), pp. 1-5. IEEE, 2016.
+
+- For Power System Toolbox (PST) related questions, please refer to:
+1. Joe H. Chow, and Kwok W. Cheung. "A toolbox for power system dynamics and 
+control engineering education and research." IEEE transactions on Power 
+Systems 7, no. 4 (1992): 1559-1564.
+2. PST Manual
+%}
 %--------------------------------------------------------------------------
 % Main code follows from here
 clear all; clear global; close all; % clc;
@@ -35,79 +68,27 @@ global PMU_SamplingFreq attack AttackTypes PMU_attack AT BernoulliProcess NewTim
 
 % User-defined parameters:
 SavePlots = 1; % '1' for saving plots; '0' for not saving
-% -------------------------------------------------------------------------
-% Load topology data to pick strategic load locations and generate transient
-% data for power network
-load('Results/IEEE68busSystem/TopologyData.mat');
-% 'generator_size_ordering' % ascending order
-% 'inertia_ordering' % ascending order
-% 'load_locations_with_highest_degree'
-% 'load_locations_with_lowest_degree'
-% 'area1_loads' 
-% 'area2_loads' 
-G = graph(A); 
-load_locations = setdiff(load_locations,[37, 52]);
-
-buses_1_hop = [];
-buses_2_hop = [];
-buses_3_hop = [];
-buses_4_hop = [];
-load_buses_near_high_MW_gens = [];
-load_buses_near_low_MW_gens  = [];
-load_buses_near_high_inertia_gens = [];
-load_buses_near_low_inertia_gens  = [];
-
-for i_gen = 1:length(generator_locations)
-    % Gives all 1 hop buses only
-    buses_1_hop = [buses_1_hop; nearest(G,generator_locations(i_gen),1)];
-    % Gives all 2 hops buses only
-    buses_2_hop = [buses_2_hop; setdiff(nearest(G,generator_locations(i_gen),2),nearest(G,generator_locations(i_gen),1))]; 
-    % Gives all 3 hops buses only
-    buses_3_hop = [buses_3_hop; setdiff(nearest(G,generator_locations(i_gen),3),nearest(G,generator_locations(i_gen),2))];  
-    % Gives all 4 hops buses only
-    buses_4_hop = [buses_4_hop; setdiff(nearest(G,generator_locations(i_gen),4),nearest(G,generator_locations(i_gen),3))]; 
-end
-
-buses_1_hop = intersect(buses_1_hop, load_locations);
-buses_2_hop = intersect(buses_2_hop, load_locations);
-buses_3_hop = intersect(buses_3_hop, load_locations);
-buses_4_hop = intersect(buses_4_hop, load_locations);
-
-for i_gen = 1:5
-    load_buses_near_high_MW_gens = [load_buses_near_high_MW_gens; nearest(G,generator_size_ordering(end-i_gen),2)];
-    load_buses_near_low_MW_gens  = [load_buses_near_low_MW_gens; nearest(G,generator_size_ordering(i_gen),2)];
-    
-    load_buses_near_high_inertia_gens = [load_buses_near_high_inertia_gens; nearest(G,inertia_ordering(end-i_gen),2)];
-    load_buses_near_low_inertia_gens  = [load_buses_near_low_inertia_gens; nearest(G,inertia_ordering(i_gen),2)];
-end
-
-load_buses_near_high_MW_gens = intersect(load_buses_near_high_MW_gens, load_locations);
-load_buses_near_low_MW_gens  = intersect(load_buses_near_low_MW_gens, load_locations);
-
-load_buses_near_high_inertia_gens = intersect(load_buses_near_high_inertia_gens, load_locations);
-load_buses_near_low_inertia_gens  = intersect(load_buses_near_low_inertia_gens, load_locations);
-% -------------------------------------------------------------------------
 
 % System configurations
 Network = '68'; % Choose the IEEE bus system: '9', '39', '68', '145'
-agc_control = 0; % '1' enables AGC control; '0' disables AGC control
+agc_control = 1; % '1' enables AGC control; '0' disables AGC control
 agc_time_step = 2; % time interval in seconds between agc control
 pss_control = 0; % '1' enables PSS control; '0' disables PSS control
 num_area = 2; % 1- one area and 2 - two area
-load_changes = 1; % '1' enables load changes; '0' disables load changes
+load_changes = 0; % '1' enables load changes; '0' disables load changes
 TimeStep_of_simulation = 0.01; % in seconds
 SimulationTime = 30; % in seconds
 PMU_SamplingFreq  = 50; % Measurements every second
 % -------------------------------------------------------------------------
 
 % Attack Parameters
-PMU_attack = 0; % '1' enables cyber-attacks on PMUs; '0' disables cyber-attacks on PMUs
+PMU_attack = 1; % '1' enables cyber-attacks on PMUs; '0' disables cyber-attacks on PMUs
 AttackTypes = {'Latency','PacketDrop','Ramp','Step','Poisoning','Trapezoid','Freezing'};
-AT = AttackTypes{7};
-if ~PMU_attack 
+AT = AttackTypes{5};
+if ~PMU_attack
     AT = 'None';
 end
-    
+
 % Cyber-attack is to be introduced in PMU sensors at attack location bus
 % AttackTypes{1}: 'Latency' attack (additional delays introduced  in PMU packet latencies)
 % AttackTypes{2}: 'PacketDrop' attack (unauthorized  dropping  of  PMU packets)
@@ -134,7 +115,7 @@ attack_magnitudes_percent = [0.8; 0.9; 1; 1.2]; % Attack magnitudes
 % attack_magnitudes_percent(:,1) = 0.07;
 % define the trapezoidal attack characteristics
 % attack_durations defined below doesn't come into existence for
-% Trapezoidal attacks 
+% Trapezoidal attacks
 Trapezoid.initial_slope     = 10; % sec
 Trapezoid.intermediate_step = 10; % sec
 Trapezoid.final_slope       = 10; % sec
@@ -145,9 +126,9 @@ Trapezoid.initial_attack_magnitude       = [0.03; 0.04; 0.05; 0.06]*10;
 Trapezoid.final_attack_magnitude         = [0.03; 0.04; 0.05; 0.06]*10;
 Trapezoid.intermediate_attack_magnitude  = [0.03; 0.04; 0.05; 0.06]*10;
 % Freezing attack characteristics
-% PMU value at this time point is used during the attack  
+% PMU value at this time point is used during the attack
 Freezing.time_point = 38/TimeStep_of_simulation/2;
-% Which state the attacker needs to freeze? 
+% Which state the attacker needs to freeze?
 % 'Frequency', 'Voltage', 'Angle'
 Freezing.states     = ["Voltage"; "Angle"];
 %--------------------------------------------------------------------------
@@ -170,7 +151,7 @@ attack.start_time_in_sec = 39; % randi(round(0.8*simParams.simTime),1,1);
 % Mention the attack duration for the attack in seconds
 attack_durations = linspace(15,25,n_attacks_on_duration_of_attack);
 % Number of load change scenarios
-n_lc_scenarios = 15; % Number of load changes (== # num of scenarios corresponding to the load changes)
+n_lc_scenarios = 1; % Number of load changes (== # num of scenarios corresponding to the load changes)
 n_lc_events_per_scenario = 1; % Number of load changes in single scenario
 % How many loads needs to change their nominal value during the simulation?
 % Can be a pre-defined number of loads or can be a random number
@@ -179,6 +160,59 @@ n_lc_scen = 1;
 
 %--------------------------------------------------------------------------
 Initialization
+% -------------------------------------------------------------------------
+% Load topology data to pick strategic load locations and generate transient
+% data for power network
+load('TopologyData.mat');
+% 'generator_size_ordering' % ascending order
+% 'inertia_ordering' % ascending order
+% 'load_locations_with_highest_degree'
+% 'load_locations_with_lowest_degree'
+% 'area1_loads'
+% 'area2_loads'
+G = graph(A);
+load_locations = setdiff(load_locations,[37, 52]);
+
+buses_1_hop = [];
+buses_2_hop = [];
+buses_3_hop = [];
+buses_4_hop = [];
+load_buses_near_high_MW_gens = [];
+load_buses_near_low_MW_gens  = [];
+load_buses_near_high_inertia_gens = [];
+load_buses_near_low_inertia_gens  = [];
+
+for i_gen = 1:length(generator_locations)
+    % Gives all 1 hop buses only
+    buses_1_hop = [buses_1_hop; nearest(G,generator_locations(i_gen),1)];
+    % Gives all 2 hops buses only
+    buses_2_hop = [buses_2_hop; setdiff(nearest(G,generator_locations(i_gen),2),nearest(G,generator_locations(i_gen),1))];
+    % Gives all 3 hops buses only
+    buses_3_hop = [buses_3_hop; setdiff(nearest(G,generator_locations(i_gen),3),nearest(G,generator_locations(i_gen),2))];
+    % Gives all 4 hops buses only
+    buses_4_hop = [buses_4_hop; setdiff(nearest(G,generator_locations(i_gen),4),nearest(G,generator_locations(i_gen),3))];
+end
+
+buses_1_hop = intersect(buses_1_hop, load_locations);
+buses_2_hop = intersect(buses_2_hop, load_locations);
+buses_3_hop = intersect(buses_3_hop, load_locations);
+buses_4_hop = intersect(buses_4_hop, load_locations);
+
+for i_gen = 1:5
+    load_buses_near_high_MW_gens = [load_buses_near_high_MW_gens; nearest(G,generator_size_ordering(end-i_gen),2)];
+    load_buses_near_low_MW_gens  = [load_buses_near_low_MW_gens; nearest(G,generator_size_ordering(i_gen),2)];
+    
+    load_buses_near_high_inertia_gens = [load_buses_near_high_inertia_gens; nearest(G,inertia_ordering(end-i_gen),2)];
+    load_buses_near_low_inertia_gens  = [load_buses_near_low_inertia_gens; nearest(G,inertia_ordering(i_gen),2)];
+end
+
+load_buses_near_high_MW_gens = intersect(load_buses_near_high_MW_gens, load_locations);
+load_buses_near_low_MW_gens  = intersect(load_buses_near_low_MW_gens, load_locations);
+
+load_buses_near_high_inertia_gens = intersect(load_buses_near_high_inertia_gens, load_locations);
+load_buses_near_low_inertia_gens  = intersect(load_buses_near_low_inertia_gens, load_locations);
+% -------------------------------------------------------------------------
+
 %--------------------------------------------------------------------------
 for i_lc_scen = 1:n_lc_scen
     % ------- Latin Hyper Cube sampling to generate multiple load vectors -----
@@ -189,7 +223,7 @@ for i_lc_scen = 1:n_lc_scen
     modified_load_locations = area2_loads;
     modified_load_locations = setdiff(modified_load_locations, [37 52]);
     loads_undergoing_change = modified_load_locations; % randsample(load_locations, n_loads_to_change); % [48 23 1 33 47 44 21 51 46 15 37 50 41]; % randsample(load_locations, n_loads_to_change);
-    n_loads_to_change = length(loads_undergoing_change); 
+    n_loads_to_change = length(loads_undergoing_change);
     tmp_lvs = nominal_load_values(loads_undergoing_change);
     loads_undergoing_change_sorted = zeros(n_loads_to_change,1);
     
@@ -209,10 +243,10 @@ for i_lc_scen = 1:n_lc_scen
     area1_loads_undergoing_change = area1_loads; % randsample(load_locations, n_loads_to_change); % [48 23 1 33 47 44 21 51 46 15 37 50 41]; % randsample(load_locations, n_loads_to_change);
     area2_loads_undergoing_change = area2_loads;
     loads_undergoing_change = [area1_loads_undergoing_change; area2_loads_undergoing_change];
-    n_loads_to_change = length(area1_loads_undergoing_change) + length(area2_loads_undergoing_change); 
+    n_loads_to_change = length(area1_loads_undergoing_change) + length(area2_loads_undergoing_change);
     tmp1_lvs = nominal_load_values(area1_loads_undergoing_change);
     tmp2_lvs = nominal_load_values(area2_loads_undergoing_change);
-%     loads_undergoing_change_sorted = zeros(n_loads_to_change,1);
+    %     loads_undergoing_change_sorted = zeros(n_loads_to_change,1);
     
     area1_loads_undergoing_change_sorted = zeros(length(area1_loads_undergoing_change),1);
     area2_loads_undergoing_change_sorted = zeros(length(area2_loads_undergoing_change),1);
@@ -225,19 +259,19 @@ for i_lc_scen = 1:n_lc_scen
     loads_undergoing_change_sorted = [area1_loads_undergoing_change_sorted; area2_loads_undergoing_change_sorted];
     
     % load changes -- based on Latin Hyper Cube sampling
-    area1_amount_of_load_change = (lhsnorm(tmp1_lvs', diag(tmp1_lvs*0.4),n_lhc_samples))'...
+    area1_amount_of_load_change = (lhsnorm(tmp1_lvs', diag(tmp1_lvs*0.2),n_lhc_samples))'...
         - nominal_load_values(area1_loads_undergoing_change);
-    area2_amount_of_load_change = (lhsnorm(tmp2_lvs', diag(tmp2_lvs*0.4),n_lhc_samples))'...
+    area2_amount_of_load_change = (lhsnorm(tmp2_lvs', diag(tmp2_lvs*0.2),n_lhc_samples))'...
         - nominal_load_values(area2_loads_undergoing_change);
     
     
     amount_of_load_change = [-abs(area1_amount_of_load_change); abs(area2_amount_of_load_change)];
-
     
-%     amount_of_load_change = [-0.8];
-%     3.22 +0.1 +0.8
-%     2.34 -0.3 -0.3 
-%          -0.2 +0.5   
+    
+    %     amount_of_load_change = [-0.8];
+    %     3.22 +0.1 +0.8
+    %     2.34 -0.3 -0.3
+    %          -0.2 +0.5
     %--------------------------------------------------------------------------
     
     for i_load_changes = 1:n_lc_scenarios
@@ -303,7 +337,7 @@ for i_lc_scen = 1:n_lc_scen
                 % Saving the Scenario description.txt file based on the user inputs:
                 Bus1      = sw_con(2,2);
                 Bus2      = sw_con(2,3);
-                                                                                                                            
+                
                 %--------------------------------------------------------------------------
                 
                 % Running over the list of attack locations
@@ -317,20 +351,20 @@ for i_lc_scen = 1:n_lc_scen
                     for i_attack_duration = 1:n_attacks_on_duration_of_attack
                         % Calculate end time of attack in seconds
                         attack.duration_in_sec = attack_durations(i_attack_duration);
-                        if strcmp(AT, 'Ramp') || strcmp(AT, 'Step') || strcmp(AT, 'Posioning') || strcmp(AT, 'Freezing')
-                            attack.end_time_in_sec = attack.start_time_in_sec + attack.duration_in_sec;    
+                        if strcmp(AT, 'Ramp') || strcmp(AT, 'Step') || strcmp(AT, 'Poisoning') || strcmp(AT, 'Freezing')
+                            attack.end_time_in_sec = attack.start_time_in_sec + attack.duration_in_sec;
                         elseif strcmp(AT, 'Trapezoid')
                             attack.end_time_in_sec = attack.start_time_in_sec + Trapezoid.initial_slope + Trapezoid.intermediate_step + Trapezoid.final_slope;
                         end
                         
                         for i_attack_magnitude = 1:n_attacks_on_magnitude
-                            if strcmp(AT, 'Ramp') || strcmp(AT, 'Step') || strcmp(AT, 'Posioning')
+                            if strcmp(AT, 'Ramp') || strcmp(AT, 'Step') || strcmp(AT, 'Poisoning')
                                 attack.max_mod_frac = 1 + (attack_magnitudes_percent(:,i_attack_magnitude))/100;
                             elseif strcmp(AT, 'Trapezoid')
                                 attack.initial_max_mod_frac      = 1 + (Trapezoid.initial_attack_magnitude(:,i_attack_magnitude))/100;
                                 attack.intermediate_max_mod_frac = 1 + (Trapezoid.intermediate_attack_magnitude(:,i_attack_magnitude))/100;
-                                attack.final_max_mod_frac        = 1 + (Trapezoid.final_attack_magnitude(:,i_attack_magnitude))/100;                                
-                            end 
+                                attack.final_max_mod_frac        = 1 + (Trapezoid.final_attack_magnitude(:,i_attack_magnitude))/100;
+                            end
                             tic
                             if num_area == 1
                                 % ACE_data.ACE = [];
@@ -345,21 +379,21 @@ for i_lc_scen = 1:n_lc_scen
                             attack_description
                             %----------------------------------------------------------
                             scenario_description
-                            %------------------------------------------------------------------------
-                            load('Results/IEEE68busSystem/scheduled_tie_powers.mat')
+                            %------------------------------------------------------------------------                            
                             % assuming [Buses 1-2; Buses 1-27; Buses 9-8]
-                            % for IEEE 68 bus system 
+                            % as TIE lines for IEEE 68 bus system
+                            load('scheduled_tie_powers.mat')
                             TieLineScheduledPowers  = [P_1_2_scheduled; P_1_27_scheduled; -P_8_9_scheduled];
                             %----------------------------------------------------------
                             if PMU_attack
                                 fprintf('[INFO] Attack locations: Buses %d \n', AttackLocation)
                                 if strcmp(AT,'Ramp') || strcmp(AT,'Step')
-                                    fprintf('[INFO] Attack magnitudes in percentages: %0.2f%% \n',attack_magnitudes_percent(:,i_attack_magnitude))                                    
+                                    fprintf('[INFO] Attack magnitudes in percentages: %0.2f%% \n',attack_magnitudes_percent(:,i_attack_magnitude))
                                 elseif strcmp(AT,'Poisoning')
                                     fprintf('[INFO] Variance of attack: %0.4f%% \n', poisoning.var)
                                     fprintf('[INFO] Mean of attack: %0.4f%% \n', poisoning.mean)
                                 end
-                                if strcmp(AT, 'Ramp') || strcmp(AT, 'Step') || strcmp(AT, 'Posioning')
+                                if strcmp(AT, 'Ramp') || strcmp(AT, 'Step') || strcmp(AT, 'Poisoning')
                                     fprintf('[INFO] Start time of attack (sec): %0.1f\n', attack.start_time_in_sec)
                                     fprintf('[INFO] End time of attack (sec): %0.1f\n', attack.end_time_in_sec)
                                 elseif strcmp(AT, 'Trapezoid')
@@ -367,7 +401,7 @@ for i_lc_scen = 1:n_lc_scen
                                     fprintf('[INFO] Intermediate step attack start time (sec): %0.1f\n', attack.start_time_in_sec + Trapezoid.initial_slope)
                                     fprintf('[INFO] Decreasing ramp attack start time (sec): %0.1f\n', attack.start_time_in_sec + Trapezoid.initial_slope + Trapezoid.intermediate_step )
                                     fprintf('[INFO] Overall attack end time (sec): %0.1f\n', attack.start_time_in_sec + Trapezoid.initial_slope + Trapezoid.intermediate_step + Trapezoid.final_slope)
-                                end 
+                                end
                             end
                             %----------------------------------------------------------
                             s_simu_PD % Main code running power flow and time-domain simulations
@@ -393,7 +427,8 @@ for i_lc_scen = 1:n_lc_scen
                                     FigureFile = sprintf('%s/ACE',scenDir);
                                     saveas(ace_plot,FigureFile,'jpg')
                                 end
-                                figure('Position',[-1120, 0, 800, 600])
+                                %{
+                                figure%('Position',[-1120, 0, 800, 600])
                                 subplot(3,1,1)
                                 plot(PMU.TimeStamps,PMU.f(:,area1_loads_undergoing_change),'LineWidth',2)
                                 title(sprintf('Scenario: %d', scenIdx));
@@ -410,7 +445,8 @@ for i_lc_scen = 1:n_lc_scen
                                 legend boxoff
                                 title(sprintf('Scenario: %d', scenIdx));
                                 saveas(gcf, sprintf('%s/Load_change_locations',scenDir), 'jpg')
-%                                 close all
+                                %                                 close all
+                                %}
                             end
                             save(sprintf('%s/PMUData.mat',scenDir), 'PMU','PMU_SamplingFreq','SimulationTime', 'fmeas_con', 'TimeStep_of_simulation', 'AttackLocation', 't', 'PMU_samples', 'pelect');
                             save(sprintf('%s/SCADAData.mat',scenDir), 'SCADA','Required_NumofMeasEvery2Seconds_SCADA','SimulationTime','Vmeas_con');
