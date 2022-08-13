@@ -72,8 +72,6 @@ SavePlots = 1; % '1' for saving plots; '0' for not saving
 % System configurations
 Network = '68'; % Choose the IEEE bus system: '9', '39', '68', '145'
 agc_control = 1; % '1' enables AGC control; '0' disables AGC control
-% AGC controls tuned only for IEEE 68 bus system
-if ~strcmp(Network,'68'), agc_control = 0; end
 agc_time_step = 2; % time interval in seconds between agc control
 pss_control = 0; % '1' enables PSS control; '0' disables PSS control
 num_area = 2; % 1- one area and 2 - two area
@@ -176,7 +174,7 @@ G = graph(A);
 if strcmp(Network,'68')
     load_locations = setdiff(load_locations,[37, 52]);
 end
-%--------------------------------------------------------------------------
+% -------------------------------------------------------------------------
 identify_strategic_load_locations
 % this identifies strategic load locations where the user can chose to
 % introduce the disturbance
