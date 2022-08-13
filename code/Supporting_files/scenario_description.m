@@ -2,14 +2,18 @@ Gen_Types = {'Electromechanical','Subtransient salient pole','Subtransient round
 
 % Creating Results and Scenario directory:
 if ~exist('Results','dir'), mkdir('Results'); end
-if PMU_attack 
-    ResDir = sprintf('Results/IEEE%sbusSystem/%s',Network,AT);
-else
-    ResDir = sprintf('Results/IEEE%sbusSystem',Network);
-end
-if load_changes && ~PMU_attack
-    ResDir = sprintf('Results/IEEE%sbusSystem/LoadChanges',Network);
+% First always check for fault; then check for attack; then check if only
+% load changes; lastly check if no disturbance is given
+if sw_con(2,6) < 6
+    ResDir = sprintf('Results/IEEE%sbusSystem/Fault',Network);
+elseif PMU_attack
+    ResDir = sprintf('Results/IEEE%sbusSystem/Attack',Network);    
+elseif load_changes
+    ResDir = sprintf('Results/IEEE%sbusSystem/LoadChanges',Network);    
+elseif sw_con(2,6) == 6
+    ResDir = sprintf('Results/IEEE%sbusSystem/NoChanges',Network);
 end 
+
 if ~exist(ResDir,'dir'), mkdir(ResDir); end
 
 scenIdx = 1;
