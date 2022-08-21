@@ -6,6 +6,7 @@ updated: April 27, 2020 by Sai Pushpak
 updated: May 12, 2020 by Sai Pushpak (added trapezoidal attacks
 and freezing attacks)
 updated: Nov 22, 2021 by Sai Pushpak (fixed the run errors (load_locations))
+updated: Aug 16, 2022 by Sai Pushpak (updated the load changes logic, added more parameters for Poisoning attack)
 %}
 %--------------------------------------------------------------------------
 %{
@@ -58,7 +59,7 @@ global agc_time_step agc_control gen_inputs load_changes num_area
 global ace1 ace2 S1_agcm S2_agcm area1_buses area2_buses
 global basmva simParams
 global PMU_locations PMU_samples PMU_samples_f PMU_samples_fdot
-global AttackLocation AttackVector Freezing
+global AttackLocation AttackVector Freezing Count poisoning
 global PMU SCADA n_PMU SCADA_row_location PMU_SCADA_Difference
 global SCADA_locations SCADA_samples
 global PMU_area1_locations PMU_area2_locations n_loads_to_change
@@ -77,7 +78,7 @@ if ~strcmp(Network,'68'), agc_control = 0; end
 agc_time_step = 2; % time interval in seconds between agc control
 pss_control = 0; % '1' enables PSS control; '0' disables PSS control
 num_area = 2; % 1- one area and 2 - two area
-load_changes = 0; % '1' enables load changes; '0' disables load changes
+load_changes = 1; % '1' enables load changes; '0' disables load changes
 TimeStep_of_simulation = 0.01; % in seconds
 SimulationTime = 30; % in seconds
 PMU_SamplingFreq  = 50; % Measurements every second
@@ -102,19 +103,17 @@ end
 % increased, kept on hold and gradually decreased or viceversa
 % For Poisoning attack noise parameters are picked from a Gaussian distribution
 %%%%% the below attack characteristics get activated only if PMU_attack==1
+% ---- Poisining attack parameters ----
 % Predefine the mean and variance for data poisioning
 poisoning.mean = 0.0;
-% Rows    - attack location
-% Columns - indicate scenario's
-poisoning.var  = [0.005;
-    0.006;
-    0.005;
-    0.008];
+poisoning.var  = 0.005;
+% Which state the attacker needs to poison?
+% ['Frequency', 'Voltage', 'Angle']
+poisoning.states     = ["Frequency"];
+% ---- Step, Ramp attack parameters ----
 % Predefined set of attack magnitude percentages to be simulated
-% Rows    - attack location
-% Columns - indicate scenario's
 attack_magnitudes_percent = [0.8; 0.9; 1; 1.2]; % Attack magnitudes
-% attack_magnitudes_percent(:,1) = 0.07;
+% ---- Trapezoid attack parameters ----
 % define the trapezoidal attack characteristics
 % attack_durations defined below doesn't come into existence for
 % Trapezoidal attacks
@@ -122,17 +121,19 @@ Trapezoid.initial_slope     = 10; % sec
 Trapezoid.intermediate_step = 10; % sec
 Trapezoid.final_slope       = 10; % sec
 % Below give attack magnitudes in %
-% Rows    : number of attack locations
-% Columns : number of scenarios
-Trapezoid.initial_attack_magnitude       = [0.03; 0.04; 0.05; 0.06]*10;
-Trapezoid.final_attack_magnitude         = [0.03; 0.04; 0.05; 0.06]*10;
-Trapezoid.intermediate_attack_magnitude  = [0.03; 0.04; 0.05; 0.06]*10;
+% Rows    : number of attack locations (currently hard coded for 4 attack locations)
+% Columns : number of scenarios 
+Trapezoid.initial_attack_magnitude       = [0.003; 0.004; 0.005; 0.006];
+Trapezoid.final_attack_magnitude         = [0.003; 0.004; 0.005; 0.006];
+Trapezoid.intermediate_attack_magnitude  = [0.003; 0.004; 0.005; 0.006];
+% ---- Freezing attack parameters ---- 
 % Freezing attack characteristics
 % PMU value at this time point is used during the attack
-Freezing.time_point = 38/TimeStep_of_simulation/2;
+Freezing.time_point = 2/TimeStep_of_simulation/2; % The resultant value is in seconds 
 % Which state the attacker needs to freeze?
 % 'Frequency', 'Voltage', 'Angle'
-Freezing.states     = ["Voltage"; "Angle"];
+Freezing.states     = ['Frequency'];
+Count = 1;
 %--------------------------------------------------------------------------
 
 % Multiple scenario generation parameters
@@ -180,6 +181,8 @@ end
 identify_strategic_load_locations
 % this identifies strategic load locations where the user can chose to
 % introduce the disturbance
+% Assign the choice of the following load change locations for the variable
+% "loads_undergoing_change" in line 253
 %{
 buses_1_hop
 buses_2_hop
@@ -216,7 +219,7 @@ for i_lc_scen = 1:n_lc_scen
     amount_of_load_change = -abs(amount_of_load_change);
     %}
     
-    
+    %{
     area1_loads = setdiff(area1_loads, [37 52]);
     area2_loads = setdiff(area2_loads, [37 52]);
     area1_loads_undergoing_change = area1_loads; % randsample(load_locations, n_loads_to_change); % [48 23 1 33 47 44 21 51 46 15 37 50 41]; % randsample(load_locations, n_loads_to_change);
@@ -245,12 +248,32 @@ for i_lc_scen = 1:n_lc_scen
     
     
     amount_of_load_change = [-abs(area1_amount_of_load_change); abs(area2_amount_of_load_change)];
+    %}
     
+    loads_undergoing_change = load_buses_near_high_MW_gens;
+    n_loads_to_change = length(loads_undergoing_change);
+    tmp_lvs = nominal_load_values(loads_undergoing_change);
+    loads_undergoing_change_sorted = zeros(n_loads_to_change,1);
+    for i_l = 1:n_loads_to_change
+        loads_undergoing_change_sorted(i_l) = find(load_locations == loads_undergoing_change(i_l));
+    end
     
-    %     amount_of_load_change = [-0.8];
-    %     3.22 +0.1 +0.8
-    %     2.34 -0.3 -0.3
-    %          -0.2 +0.5
+    % load changes -- based on Latin Hyper Cube sampling
+    amount_of_load_changes = (lhsnorm(tmp_lvs', diag(abs(tmp_lvs)),5000))'...
+        - nominal_load_values(loads_undergoing_change);
+    %{
+    temp = amount_of_load_changes(1,:);
+    [~, indx] = sort(abs(temp),'descend');
+    amount_of_load_change = temp(:,indx(randi(300,n_lc_scenarios,1)));
+    %}
+    %
+    amount_of_load_change = zeros(size(tmp_lvs,1),n_lc_scenarios);
+    for i = 1:size(tmp_lvs,1)
+        temp = amount_of_load_changes(i,:);
+        [~, indx] = sort(abs(temp),'descend');
+        amount_of_load_change(i,:) = temp(:,indx(randi(100,n_lc_scenarios,1)));
+    end
+    %}    
     %--------------------------------------------------------------------------
     
     for i_load_changes = 1:n_lc_scenarios
@@ -259,7 +282,7 @@ for i_lc_scen = 1:n_lc_scen
         % %% start_time is chosen randomly
         % load_change_parameters.start_time = diag(sort(randi(SimulationTime-15,n_lc_events),'ascend'));
         % %% start_time is chosen deterministically
-        load_change_parameters.start_time = 2; % linspace(1,120,n_loads_to_change);% [randi([5,16],1,1) randi([25,40],1,1)];% sort(randi([0, 40],1,n_lc_events),'ascend'); % [15 35]; %
+        load_change_parameters.start_time = 5; % linspace(1,120,n_loads_to_change);% [randi([5,16],1,1) randi([25,40],1,1)];% sort(randi([0, 40],1,n_lc_events),'ascend'); % [15 35]; %
         % %% load changes are permanent: leave the end_time variable as empty
         % %% load changes are temporary: end_time variable is nonempty
         load_change_parameters.end_time   = []; % load_change_parameters.start_time + 0.01;
@@ -330,15 +353,17 @@ for i_lc_scen = 1:n_lc_scen
                     for i_attack_duration = 1:n_attacks_on_duration_of_attack
                         % Calculate end time of attack in seconds
                         attack.duration_in_sec = attack_durations(i_attack_duration);
-                        if strcmp(AT, 'Ramp') || strcmp(AT, 'Step') || strcmp(AT, 'Poisoning') || strcmp(AT, 'Freezing')
+                        if strcmp(AT, 'Ramp') || strcmp(AT, 'Step') || strcmp(AT, 'Poisoning') || strcmp(AT, 'Freezing') 
                             attack.end_time_in_sec = attack.start_time_in_sec + attack.duration_in_sec;
                         elseif strcmp(AT, 'Trapezoid')
                             attack.end_time_in_sec = attack.start_time_in_sec + Trapezoid.initial_slope + Trapezoid.intermediate_step + Trapezoid.final_slope;
                         end
                         
                         for i_attack_magnitude = 1:n_attacks_on_magnitude
-                            if strcmp(AT, 'Ramp') || strcmp(AT, 'Step') || strcmp(AT, 'Poisoning')
+                            if strcmp(AT, 'Ramp') || strcmp(AT, 'Step') 
                                 attack.max_mod_frac = 1 + (attack_magnitudes_percent(:,i_attack_magnitude))/100;
+                            elseif strcmp(AT, 'Poisoning')
+                                poisoning.var = poisoning.var*i_attack_magnitude;
                             elseif strcmp(AT, 'Trapezoid')
                                 attack.initial_max_mod_frac      = 1 + (Trapezoid.initial_attack_magnitude(:,i_attack_magnitude))/100;
                                 attack.intermediate_max_mod_frac = 1 + (Trapezoid.intermediate_attack_magnitude(:,i_attack_magnitude))/100;
@@ -449,5 +474,5 @@ end
 % Convert to table format and write the table to a CSV file
 % scenDes_full_table = cell2table(scenDes_full);
 % writetable(scenDes_full_table,sprintf('%s/FullScenarioData.csv',ResDir),'WriteVariableNames',0)
-fprintf('\n All the data is saved and the simulation is complete now.\n')
+fprintf('\n All the data is saved into %s and the simulation is complete now.\n',scenDir)
 %--------------------------------------------------------------------------

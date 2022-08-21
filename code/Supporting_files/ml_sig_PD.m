@@ -9,10 +9,10 @@ global lmod_sig n_lmod
 % global line basmva load_con
 global bus_int bus_v h_sol basrad load_change_parameters n_lc_events_per_scenario
 global fmeas_con busDeltaAngle busDeltaFreqPU dBusDeltaFreqPU busFreq
-global load_changes simParams PMU_SamplingFreq dbusFreq
+global load_changes simParams PMU_SamplingFreq dbusFreq Count TimeStep_of_simulation
 global PMU_locations PMU_samples PMU_samples_f PMU_samples_fdot AttackTypes PMU_attack
 global AttackLocation AttackVector PMU SCADA PMU_SCADA_Difference
-global SCADA_locations SCADA_samples SCADA_row_location Freezing 
+global SCADA_locations SCADA_samples SCADA_row_location Freezing poisoning
 global attack AT BernoulliProcess NewTimes count2 Trapezoid n_loads_to_change
 global amount_of_load_change_per_scen loads_undergoing_change_sorted 
 % =====================================================================================

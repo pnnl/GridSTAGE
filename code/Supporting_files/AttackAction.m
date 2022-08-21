@@ -11,12 +11,23 @@ if strcmp(AT,'Poisoning')
         row_location_fdot = find(PMU_samples_fdot == k, 1);
         
         if ~isempty(row_location)
-            PMU.Vm(row_location, AttackLocation) = PMU.Vm(row_location,AttackLocation)+(AttackVector.MultiplicativeFactor(:,k-AttackVector.attack_start_step))';
-            PMU.Va(row_location, AttackLocation) = PMU.Va(row_location,AttackLocation)+(AttackVector.MultiplicativeFactor(:,k-AttackVector.attack_start_step))';
-            PMU.f(row_location, AttackLocation)  = PMU.f(row_location,AttackLocation)+(AttackVector.MultiplicativeFactor(:,k-AttackVector.attack_start_step))';
+            
+            check_frequency_poison = find(poisoning.states == 'Frequency');
+            check_voltage_poison   = find(poisoning.states == 'Voltage');
+            check_angle_poison     = find(poisoning.states == 'Angle');                    
+        
+            if check_voltage_poison
+                PMU.Vm(row_location, AttackLocation) = PMU.Vm(row_location,AttackLocation)+(AttackVector.MultiplicativeFactor(:,k-AttackVector.attack_start_step))';
+            end
+            if check_angle_poison                
+                PMU.Va(row_location, AttackLocation) = PMU.Va(row_location,AttackLocation)+(AttackVector.MultiplicativeFactor(:,k-AttackVector.attack_start_step))';
+            end
+            if check_frequency_poison
+                PMU.f(row_location, AttackLocation)  = PMU.f(row_location,AttackLocation)+(AttackVector.MultiplicativeFactor(:,k-AttackVector.attack_start_step))';
+            end
         end
         
-        if ~isempty(row_location_fdot)
+        if ~isempty(row_location_fdot) && ~isempty(check_frequency_poison)
             PMU.fdot(row_location_fdot, AttackLocation)  = PMU.fdot(row_location_fdot,AttackLocation)+(AttackVector.MultiplicativeFactor(:,k-AttackVector.attack_start_step))';
         end
     end
@@ -96,7 +107,6 @@ elseif strcmp(AT, 'Freezing')
         row_location_fdot = find(PMU_samples_fdot == k, 1);
         
         if ~isempty(row_location)
-            Freezing.time_point = 1800;
             
             check_frequency_freeze = find(Freezing.states == 'Frequency');
             check_voltage_freeze   = find(Freezing.states == 'Voltage');
